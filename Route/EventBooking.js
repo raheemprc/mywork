@@ -14,6 +14,7 @@ Event.get("/", async (req, res) => {
           { phone: { $regex: query, $options: "i" } },
           { full_name: { $regex: query, $options: "i" } },
           { bookingDate: { $regex: query, $options: "i" } },
+          { appointmentDate: { $regex: query, $options: "i" } },
           { eventName: { $regex: query, $options: "i" } },
           { email: { $regex: query, $options: "i" } },
           { eventStatus: { $regex: query, $options: "i" } },
@@ -23,7 +24,7 @@ Event.get("/", async (req, res) => {
         .exec();
     } else {
       data = await EventModel.find().sort({ eventDate: "asc" }).exec();
-    } 
+    }
 
     const sortedData = data.sort((a, b) => {
       const [dayA, monthA, yearA] = a.bookingDate.split("/");
@@ -65,8 +66,8 @@ Event.get("/:id", async (req, res) => {
       }
     });
     res.send(sortedData);
-  } catch(err) {
-    console.log(err)
+  } catch (err) {
+    console.log(err);
     res.send(err);
   }
 });
@@ -95,10 +96,10 @@ Event.post("/", async (req, res) => {
   const day = currentDate.getDate();
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
-  
+
   // Add leading zero to month if necessary
   const formattedMonth = month < 10 ? `0${month}` : month;
-  const foramttedday=day<10?`0${day}`:day
+  const foramttedday = day < 10 ? `0${day}` : day;
   const formattedDate = `${foramttedday}/${formattedMonth}/${year}`;
   let check = await UsersModel.find({ phone: payload.phone });
   try {
@@ -106,21 +107,25 @@ Event.post("/", async (req, res) => {
       const user = new UsersModel({
         phone: payload.phone,
         full_name: payload.full_name,
-        email: payload.email ? payload.email : ""
+        email: payload.email ? payload.email : "",
       });
       await user.save();
-      console.log("user save"); 
+      console.log("user save");
     }
 
     const userid = await UsersModel.find({ phone: payload.phone });
 
     const id = userid[0]._id;
-    
-    const data = new EventModel({ ...payload, userId: id,bookingDate:formattedDate });
+
+    const data = new EventModel({
+      ...payload,
+      userId: id,
+      bookingDate: formattedDate,
+    });
     await data.save();
     res.send(data);
   } catch {
-    res.send("err"); 
+    res.send("err");
   }
 });
 Event.delete("/:id", async (req, res) => {
@@ -129,34 +134,33 @@ Event.delete("/:id", async (req, res) => {
     const data = await EventModel.find({ _id: id });
     const payment = data[0].paymentStatus;
     const amount = data[0].ammount;
-   
+
     const user = await UsersModel.find({ _id: data[0].userId });
     let { paidAmmount } = user[0];
     let { remainAmmount } = user[0];
-    if(payment){
+    if (payment) {
       paidAmmount -= amount;
       await UsersModel.findByIdAndUpdate(
         { _id: data[0].userId },
-  
-        { paidAmmount}
+
+        { paidAmmount }
       );
-    }
-    else{
+    } else {
       remainAmmount -= amount;
       await UsersModel.findByIdAndUpdate(
         { _id: data[0].userId },
-  
-        {remainAmmount }
+
+        { remainAmmount }
       );
     }
     await EventModel.findByIdAndDelete({ _id: id });
     res.send("Delete Success");
-  } catch(err) {
-    console.log(err)
+  } catch (err) {
+    console.log(err);
     res.send("Delete Error");
   }
 });
-  
+
 Event.patch("/:id", async (req, res) => {
   const id = req.params.id;
   const payload = req.body;
@@ -176,10 +180,8 @@ Event.patch("/:id", async (req, res) => {
     let { remainAmmount } = user[0];
 
     if (payment == paymentnew) {
-      
       console.log(amount, amountnew);
       if (amount != amountnew) {
-        
         if (paymentnew) {
           paidAmmount += amountnew - amount;
         } else {
