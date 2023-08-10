@@ -23,7 +23,7 @@ Event.get("/", async (req, res) => {
         .sort({ eventDate: "asc" })
         .exec();
     } else {
-      data = await EventModel.find().sort({ eventDate: "asc" }).exec();
+      data = await EventModel.find().sort({ bookingDate: "asc" }).exec();
     }
 
     const sortedData = data.sort((a, b) => {
@@ -75,17 +75,18 @@ Event.get("/users/:id", async (req, res) => {
   const id = req.params.id;
   try {
     const data = await EventModel.find({ eventId: id }).sort({
-      eventDate: "asc",
+      bookingDate: "asc",
     });
     const sortedData = data.sort((a, b) => {
-      const [dayA, monthA, yearA] = a.eventDate.split("/");
-      const [dayB, monthB, yearB] = b.eventDate.split("/");
+      const [dayA, monthA, yearA] = a.bookingDate.split("/");
+      const [dayB, monthB, yearB] = b.bookingDate.split("/");
       const dateA = new Date(`${yearA}-${monthA}-${dayA}`);
       const dateB = new Date(`${yearB}-${monthB}-${dayB}`);
       return dateA - dateB;
     });
     res.send(sortedData);
-  } catch {
+  } catch (err){
+    console.log(err)
     res.send("Error");
   }
 });
@@ -124,9 +125,12 @@ Event.post("/", async (req, res) => {
     });
     await data.save();
     res.send(data);
-  } catch {
-    res.send("err");
+  }catch (error) {
+    const errorCode = 400; 
+    const errorMessage = "An error occurred: " + error.message;
+    res.status(errorCode).send(errorMessage);
   }
+  
 });
 Event.delete("/:id", async (req, res) => {
   const id = req.params.id;
@@ -155,10 +159,12 @@ Event.delete("/:id", async (req, res) => {
     }
     await EventModel.findByIdAndDelete({ _id: id });
     res.send("Delete Success");
-  } catch (err) {
-    console.log(err);
-    res.send("Delete Error");
+  } catch (error) {
+    const errorCode = 404; 
+    const errorMessage = "An error occurred: " + error.message;
+    res.status(errorCode).send(errorMessage);
   }
+  
 });
 
 Event.patch("/:id", async (req, res) => {
@@ -208,9 +214,10 @@ Event.patch("/:id", async (req, res) => {
       { paidAmmount, remainAmmount }
     );
     res.send("Updated successfully");
-  } catch (err) {
-    console.log(err);
-    res.send("Update Error");
+  } catch (error) {
+    const errorCode = 500; 
+    const errorMessage = "An error occurred: " + error.message;
+    res.status(errorCode).send(errorMessage);
   }
 });
 module.exports = {

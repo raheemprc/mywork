@@ -8,7 +8,7 @@ AdminRoute.get("/", async (req, res) => {
   } catch {
     res.send("Error");
   }
-});
+}); 
 // AdminRoute.post("/", async (req, res) => {
 //   const payload = req.body;
 //   try {
